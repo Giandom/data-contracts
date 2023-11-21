@@ -28,7 +28,7 @@ Table of Contents
 # Overview
 In this demo, we will illustrate how to manage the key phases of a Data Product's lifecycle, from the publishing and validation phase to the release phase, leveraging the features of the [Open Data Mesh Platform](https://initiative.opendatamesh.org/).
 
-You can find the details of the specification that describes the Data Product for this demo [in questa guida](https://dpds.opendatamesh.org/overview/).
+You can find the details of the specification that describes the Data Product for this demo [in this guide](https://dpds.opendatamesh.org/overview/).
 
 # Flight Frequency Data Product
 The Flight Frequency Data Product exposes information about the flight frequency for a series of air routes. This information can be queried using the output ports provided by the data product.
