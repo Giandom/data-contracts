@@ -213,7 +213,7 @@ Replace the following placeholders with the specific values from your Azure DevO
 * [organizationName]: the name of your organization in Azure DevOps.
 * [projectName]: the name of the project where you created the pipelines.
 * [pipelineID]: the ID of the specific pipeline; for the **provisionInfraDev** block, insert the ID of the **odm-demo-infrastructure** pipeline, and for the **deployAppDev** block, insert the ID of the **odm-demo-application** pipeline.
-* [IP]: enter the value used as the hostname in the configuration of the SSH service connection. [Go to ODM Platform deployment instructions section](####-ODM-Platform-deployment-instructions-####)
+* [IP]: enter the value used as the hostname in the configuration of the **odm-platform** SSH service connection.
 
 # Flight Frequency Data Product - Publish & Validation Phase
 The next step is to register the Flight Frequency Data Product in the Open Data Mesh platform.

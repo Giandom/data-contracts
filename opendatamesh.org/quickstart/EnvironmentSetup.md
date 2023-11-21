@@ -14,7 +14,7 @@ Table of Contents
    * [Create Group Variables](#create-group-variables)
 * [ODM Platform Deployment](#odm-platform-deployment)
    * [Run ODM Infrastructure Pipeline](#run-odm-infrastructure-pipeline)
-   * [Register service connection](#register-service-connection)
+   * [Register SSH service connection](#register-ssh-service-connection)
    * [Run ODM Application Pipelines](#run-odm-application-pipelines)
 * [Who do I talk to?](#who-do-i-talk-to)
 
@@ -117,7 +117,7 @@ With the environment prepared, we can deploy the components of the ODM Platform.
 Launch the **odm-platform-infrastructure** pipeline on Azure DevOps. 
 Once the execution is complete, view the details of the **Terraform Apply/Apply Terraform Plan** step and copy the IP found at the bottom of the execution log: **vm-public-endpoint**.
 
-## Register service connection
+## Register SSH service connection
 Create an SSH service connection:
    1. Go to the **Project Settings** page, located at the bottom left of Azure DevOps.
    2. In the left menu, click on **Service connections** under the **Pipelines** section.
