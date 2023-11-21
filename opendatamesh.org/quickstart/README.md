@@ -5,162 +5,153 @@ Table of Contents
 =================
 
 * [Open Data Mesh Demo](#open-data-mesh-demo)
+* [Table of Contents](#table-of-contents)
 * [Overview](#overview)
-* [Demo Requirements](#demo-requirements)
-* [Environment Setup](#environment-setup)
-   * [Create Azure DevOps Pipelines](#create-azure-devops-pipelines)
-   * [Register Service Connections](#register-service-connections)
-   * [Create Group Variables](#create-group-variables)
-* [ODM Platform Deployment](#odm-platform-deployment)
-   * [Run ODM Infrastructure Pipeline](#run-odm-infrastructure-pipeline)
-   * [Register service connection](#register-service-connection)
-   * [Run ODM Application Pipelines](#run-odm-application-pipelines)
-* [Airline Data Product - Registration Phase](#airline-data-product---registration-phase)
-   * [Configure the Data Product Lifecycle](#configure-the-data-product-lifecycle)
-   * [Register the Data Product](#register-the-data-product)
-* [Airline Data Product - Deployment Phase](#airline-data-product---deployment-phase)
+* [Flight Frequency Data Product](#flight-frequency-data-product)
+   * [Ports](#ports)
+   * [Datastore API Interface](#datastore-api-interface)
+   * [OpenAPI Interface](#openapi-interface)
+* [Lifecycle](#lifecycle)
+   * [Configure the Lifecycle block](#configure-the-lifecycle-block)
+* [Flight Frequency Data Product - Publish &amp; Validation Phase](#flight-frequency-data-product---publish--validation-phase)
+   * [Publish and Validate](#publish-and-validate)
+* [Flight Frequency Data Product - Deployment Phase](#flight-frequency-data-product---deployment-phase)
    * [Start Infrastructure Provisioning Activity](#start-infrastructure-provisioning-activity)
    * [Start Application Deployment Activity](#start-application-deployment-activity)
-* [Test Data Product Interfaces](#test-data-product-interfaces)
+* [Test Flight Frequency Data Product Interfaces](#test-flight-frequency-data-product-interfaces)
 * [Cleanup](#cleanup)
 * [Who do I talk to?](#who-do-i-talk-to)
 
 <!-- Created by https://github.com/ekalinin/github-markdown-toc -->
 
+
 # Overview
-In this demo, mostreremo come si può gestire il lifecycle di un Data Product sfruttando le funzionalità della piattaforma [Open Data Mesh](https://initiative.opendatamesh.org/).
+In this demo, we will illustrate how to manage the key phases of a Data Product's lifecycle, from the publishing and validation phase to the release phase, leveraging the features of the [Open Data Mesh Platform](https://initiative.opendatamesh.org/).
 
-Nello specifico, we are showcasing a Data Product consisting of two interfaces with their respective data contracts:
+You can find the details of the specification that describes the Data Product for this demo [in questa guida](https://dpds.opendatamesh.org/overview/).
 
-* SQL Interface: A JDBC connection is exposed to a MySQL database.
-* API REST Interface: An REST API is exposed for querying the data.
+# Flight Frequency Data Product
+The Flight Frequency Data Product exposes information about the flight frequency for a series of air routes. This information can be queried using the output ports provided by the data product.
 
-Nella prima parte di questa demo si descrivono gli step necessari per effettuare il deploy della Open Data Mesh platform in ambiente Azure.
-La seconda parte descrive come effettuare la registrazione e il deploy di un Data Product di esempio.
-Infine è descritto come eliminare tutte le risorse create durante la demo.
+![dpds-flight-frq-components](img/dpds-flight-frq-main.drawio.png)
 
-# Demo Requirements
- 
- * Azure Subscription
- * Access to Azure DevOps
-   * [Azure DevOps Terraform extension](https://marketplace.visualstudio.com/items?itemName=JasonBJohnson.azure-pipelines-tasks-terraform) installed
- * Terraform installed
- * Azure CLI installed
- * cURL or Postman installed
+## Ports
+The Flight Frequency Data Product consists of two output-ports with their respective specification and data contracts.
 
-# Environment Setup
-The demo involves running the OpenDataMesh (aka ODM) Platform in the Azure environment, registering the Data Product contained in this demo repository, and finally, deploying it.
+## Datastore API Interface
+In the following snippet, the *flight_frequency_db* output port is represented, which utilizes the Datastore API to expose an SQL interface that can be queried via JDBC.
+
+```
+{
+    "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:airlinedemo:1:outputports:flight_frequency_db",
+    "entityType": "outputport",
+    "name": "flight_frequency_db",
+    "version": "1.0.0",
+    "displayName": "flight-frequency-db",
+    "description": "Target database for airlines data. MySQL database.",
+    "promises": {
+       "platform": "westeurope.azure::mysql",
+       "serviceType": "datastore-services",
+       "api": {
+          "name": "flightFrequencyApi",
+          "version": "1.0.0",
+          "specification": "datastoreapi",
+          "specificationVersion": "1.0.0",
+          "definition": {
+            "mediaType": "text/json",
+            "$ref": "dp-demo-v1.0.0-flight-freq-datastore-oport-api.json"
+        },
+          "externalDocs": {
+             "description": "The OpenAPI v3.1.0 specification used to define the API of this port",
+             "mediaType": "text/html",
+             "$href": "https://spec.openapis.org/oas/v3.1.0"
+          }
+       },
+       "deprecationPolicy": {
+          "description": "When a new major version become available the previous one is kept online for 3 months",
+          "x-deprecation-period": "3M"
+       },
+       "slo": {
+          "description": "The slo are hight for all base service indicators because this service is business critical",
+          "x-operationalSlo": {
+             "availability": "0.99999",
+             "responsetime": "1s"
+          },
+          "x-qualitySlo": {
+             "freshness": "5m"
+          }
+       }
+    }
+ }
+```
+
+## OpenAPI Interface
+Below is the snippet representing the *flight_frequency_restapi* output port, which exposes a REST API interface through which you can query data related to flight frequency.
+
+```
+{
+    "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:airlinedemo:1:outputports:flight_frequency_restapi",
+    "entityType": "outputport",
+    "name": "flight_frequency_restapi",
+    "version": "1.0.0",
+    "displayName": "flight_frequency_restapi",
+    "description": "REST API to get airlines data.",
+    "promises": {
+       "platform": "westeurope.azure::vm",
+       "serviceType": "rest-services",
+       "api": {
+          "name": "flightFrequencyRestApi",
+          "version": "1.0.0",
+          "specification": "restapi",
+          "specificationVersion": "1.0.0",
+          "definition": {
+             "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:airlinedemo:1:outputports:flight_frequency_restapi:top3flights",
+             "name": "top3flights",
+             "displayName": "top3flights",
+             "description": "This port exposes top 3 frequent flights",
+             "version": "1.0.0",
+             "promises": {
+                 "platform": "westeurope.azure:vm",
+                 "serviceType": "rest-services",
+                 "api": {
+                     "name": "top3flights",
+                     "version": "1.0.0",
+                     "specification": "openapi",
+                     "specificationVersion": "2.0.0",
+                     "definition": {
+                         "mediaType": "text/yaml",
+                         "$ref": "dp-demo-v1.0.0-flight-freq-restapi-oport-api.json"
+                     }
+                 }
+             }
+         },
+          "externalDocs": {
+             "description": "The OpenAPI v3.1.0 specification used to define the API of this port",
+             "mediaType": "text/html",
+             "$href": "https://spec.openapis.org/oas/v3.1.0"
+          }
+       }
+    }
+ }
+```
+
+# Lifecycle
+The descriptor of the Flight Frequency Data Product defines all the information about the data product, including those related to deploying the components necessary for its execution. This information is contained in the *lifecycleInfo* block.
+The lifecycle block describes a series of activities, composed of one or more tasks, to be executed to deploy the data product's components.
+
+In the Flight Frequency Data Product, two blocks of activities are defined:
+
+* provisionInfraDev
+* deployAppDev
+
+The first represents the tasks to be performed to provision the infrastructure necessary for the data product.
+The second represents the tasks to be performed for deploying the application within the infrastructure.
 
 
-## Create Azure DevOps Pipelines
-To deploy the ODM Platform, you'll need to set up specific Azure DevOps pipelines:
+The next steps require having installed the Open Data Mesh Platform and configured the Azure environment. To do this, you can follow the steps described  [in this guide](https://github.com/data-engineering-helpers/data-contracts/blob/main/opendatamesh.org/quickstart/EnvironmentSetup.md).
 
-1. Access Azure DevOps.
-2. If not already present, create a new project.
-3. Go to the Repository section (found in the left menu) and click on "Import repository". Select the Git protocol and enter the following link: 
-    * https://github.com/opendatamesh-initiative/odm-platform.git
-4. Repeat step 3 for the following repositories:
-    * https://github.com/opendatamesh-initiative/odm-platform-up-services-executor-azuredevops.git
-    * https://github.com/Giandom/odm-demo-dp-airlines.git
-5. In the Pipelines section (still in the left menu), click on **Create Pipeline**.
-    * The first pipeline to create is for releasing the infrastructure on which the ODM Platform will rely. This pipeline will provision a VM (Standard_A1_v2, 1CPU / 2GB RAM).
-        * In the repository connection section, choose Azure Repo and select the **odm-demo-dp-airlines** repository.
-        * In the Configure section, select the Existing Azure Pipelines YAML file option. Then choose $master as the branch and **odm-platform-infra/azure-pipelines.yml** as the YAML file.
-        * Save the pipeline by selecting Save from the menu near the "Run" button (the pipeline will be saved but not executed).
-        * Change the name of the pipeline to **odm-platform-infrastructure**.
-    * The second pipeline is for deploying ODM within the infrastructure created by the first pipeline.
-        * In the repository connection section, choose Azure Repo and select the imported odm-platform repository.
-        * In the Configure section, select the Existing Azure Pipelines YAML file option. Then choose **$main** as the branch and pass the following path: **/azure-pipelines.yml**.
-        * Save the pipeline without executing it.
-        * Change the name of the pipeline to **odm-platform-application**.
-    * The third pipeline is for deploying the ODM Azure DevOps executor, a component that will interface with your Azure DevOps.
-        * In the repository connection section, choose Azure Repo and select the imported **odm-platform-up-services-executor-azuredevops** repository.
-        * In the Configure section, select the Existing Azure Pipelines YAML file option. Then choose **$main** as the branch and pass the following path: **/azure-pipelines.yml**.
-        * Save the pipeline without executing it.
-        * Change the name of the pipeline to **odm-platform-executor-azdevops**.
-    * The fourth pipeline will provision the infrastructure for the demo (provisioning a VM and a MySQL DB).
-        * In the repository connection section, choose Azure Repo and select the **odm-demo-dp-airlines** repository.
-        * In the Configure section, select the Existing Azure Pipelines YAML file option. Then choose **$master** as the branch and pass the following path: **infrastructure/azure-pipelines-infra.yml**.
-        * Save the pipeline without executing it.
-        * Change the name of the pipeline to odm-demo-infrastructure.
-    * The fifth and final pipeline is for deploying the application that will expose the REST API.
-        * In the repository connection section, choose Azure Repo and select the **odm-demo-dp-airlines** repository.
-        * In the Configure section, select the Existing Azure Pipelines YAML file option. Then choose **$master** as the branch and pass the following path: **application/airlinedemo/azure-pipelines-app.yml**.
-        * Save the pipeline without executing it.
-        * Change the name of the pipeline to **odm-demo-application**.
-
-## Register Service Connections
-1. Create an application in your Azure AD to manage the pipelines programmatically:
-    * Follow the instructions in [thos document](https://github.com/opendatamesh-initiative/odm-platform-up-services-executor-azuredevops), in the section: **Azure Environment**.
-2. Return to Azure DevOps and create an Azure Resource Manager service connection.
-    * Go to **Project Settings** (found at the bottom left of Azure DevOps).
-    * In the left menu, click on **Service connections** under the Pipelines section.
-    * Click on **New service connection**, in the top right, and select **Azure Resource Manager** as the type and **Workload Identity Federation** as the authentication method. Enter the following configurations:
-        * Scope level: Choose **Subscription**
-        * Subscription: Select the name of your Azure subscription.
-        * Resource Group: Select an existing resource group in Azure where resources will be provisioned.
-        * Service connection name: Enter  **ODMServiceConnection**
-        * Check the option: Grant access permission to all pipelines.
-
-## Create Group Variables
-1. Create the following variable groups in the Library section of Azure DevOps:
-   * Create a variable group and name it: **ODM-Platform**
-      * Add the following variables: 
-        * GITHUB_USERNAME: Necessary for reading dependencies generated by the odm-platform project (even though the project is public, authentication is required).
-        * GITHUB_PASSWORD: Enter a personal password or app password for GitHub and make it private (click on the lock icon on the right).
-        * AZURE_ODM_APP_CLIENT_ID: The client ID of the application created in step 6.
-        * AZURE_ODM_APP_CLIENT_SECRET: Enter the client secret of the application created in step 6 and make it private (click on the lock icon on the right).
-        * AZURE_TENANT_ID: Your Azure tenant ID.
-      * Click on **Save**.
-      * Click on **Pipeline permissions**, then on the three dots, and click on **Open access**.
-   * Create a second group of variables and name it: **Azure-Config**.
-      * Add the following variables:
-        * backendServiceArm: The name of the service connection created in step 7 of this section.
-        * backendAzureRmResourceGroupName: The name of an existing resource group in Azure where resources will be provisioned.
-        * backendAzureRmStorageAccountName: The name of the storage account to be used for saving the Terraform state (if you don't have one, you can create it by following [this guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal))
-        * backendAzureRmContainerName: The name of the container to be used for saving the Terraform state (if you have just created the storage account, follow [this guide](https://learn.microsoft.com/en-us/azure/storage/blobs/blob-containers-portal))
-      * Click on **Save**.
-      * Click on **Pipeline permissions**, then on the three dots, and click on **Open access**.
-2. Modify the **config.json** file in the root of this repository to fill in the necessary configurations:
-    * **tenant_id**: Your Azure tenant ID.
-    * **region**: The region in which your resources will be deployed (e.g., "Germany West Central").
-    * **subscription_id**: The ID of your Azure subscription.
-    * **resource_group_name**: The name of the Azure resource group in which you want to deploy resources.
-
-
-# ODM Platform Deployment
-With the environment prepared, we can deploy the components of the ODM Platform.
-
-## Run ODM Infrastructure Pipeline
-Launch the **odm-platform-infrastructure** pipeline on Azure DevOps. 
-Once the execution is complete, view the details of the **Terraform Apply/Apply Terraform Plan** step and copy the IP found at the bottom of the execution log: **vm-public-endpoint**.
-
-## Register service connection
-Create an SSH service connection:
-   1. Go to the **Project Settings** page, located at the bottom left of Azure DevOps.
-   2. In the left menu, click on **Service connections** under the **Pipelines** section.
-   3. Click on **New service connection**, in the top right, and select SSH as the type. Enter the following values:
-      * Host name: Enter the IP you copied earlier.
-      * Port number: Leave the default, 22.
-      * Username: odm
-      * Password: 0p3nD@t@M3sh
-      * Service connection name: odm-platform.
-      * Check the option: Grant access permission to all pipelines.
-   4. Save. 
-
-## Run ODM Application Pipelines
-Return to the pipelines page. Now run the **odm-platform-application** pipeline.
-At the end of the execution, run the **odm-platform-executor-azdevops** pipeline.
-If there were no errors, you should be able to reach the following endpoints, replacing the [IP] placeholder with the hostname used in step 3:
-
-* ODM Platform Registry Module: http://[IP]:8001/api/v1/pp/registry/swagger-ui/index.html
-* ODM DevOps Module: http://[IP]:8002/api/v1/pp/devops/swagger-ui/index.html
-
-# Airline Data Product - Registration Phase
-The next step is to register our Data Product in the ODM platform. Before doing so, let's input some configurations.
-
-## Configure the Data Product Lifecycle
-Open the **dp-demo-v1.0.0.json** file located in the **dp-demo-descriptor** folder and locate the following block:
+## Configure the Lifecycle block
+Open the **dp-demo-v1.0.0.json** file located in the **dp-demo-descriptor** folder and locate the *lifecycleInfo* block:
 
 ```
 "lifecycleInfo":{
@@ -217,17 +208,20 @@ Open the **dp-demo-v1.0.0.json** file located in the **dp-demo-descriptor** fold
       }
 ```
 
-Replace the following placeholders with the specific values from your Azure DevOps:
+Replace the following placeholders with the specific values from your Azure DevOps environment:
 
 * [organizationName]: the name of your organization in Azure DevOps.
 * [projectName]: the name of the project where you created the pipelines.
 * [pipelineID]: the ID of the specific pipeline; for the **provisionInfraDev** block, insert the ID of the **odm-demo-infrastructure** pipeline, and for the **deployAppDev** block, insert the ID of the **odm-demo-application** pipeline.
 * [IP]: enter the value used as the hostname in the configuration of the SSH service connection. [Go to ODM Platform deployment instructions section](####-ODM-Platform-deployment-instructions-####)
 
-## Register the Data Product
-We are now ready to register the Data Product in the ODM Platform. Open a terminal in the same folder as this README and execute the following commands, replacing the [IP] placeholder with the value used in the previous step.
+# Flight Frequency Data Product - Publish & Validation Phase
+The next step is to register the Flight Frequency Data Product in the Open Data Mesh platform.
 
-1. The first step is to create the Data Product by providing some basic information. Execute the following cURL command:
+## Publish and Validate
+Open a terminal in the same folder as this README and execute the following commands, replacing the [IP] placeholder with the value used in the previous step.
+
+1. The first step is to register some basic information about the Flight Frequency Data Product:
 
 ```
 curl -X 'POST' \
@@ -237,7 +231,7 @@ curl -X 'POST' \
   -d "@dp-demo-descriptor/dp-demo.json"
 ```
 
-2. Create a new version of the Data Product:
+2. Now, you can publish a new version of the Flight Frequency Data Product:
 
 ```
 curl -X 'POST' \
@@ -247,11 +241,9 @@ curl -X 'POST' \
   -d "@dp-demo-descriptor/dp-demo-v1.0.0.json"
 ```
 
-At this point, our Data Product has been registered in the ODM platform, and we can begin managing its lifecycle.
+If no errors arises, the Flight Frequency Data Product has been validated and published in the Open Data Mesh Platform, and we can begin managing its lifecycle.
 
-# Airline Data Product - Deployment Phase
-Within the definition of the Airline Data Product (dp-demo-v1.0.0.json), you'll find, in the **Lifecycle** block, two main activities: **provisionInfraDev** and **deployAppDev**. The first one will deploy the necessary infrastructure for the Data Product, while the second will deploy the application that exposes the REST APIs on the newly created infrastructure.
-
+# Flight Frequency Data Product - Deployment Phase
 ## Start Infrastructure Provisioning Activity
 Let's start with the **provisionInfraDev** activity:
 
@@ -272,7 +264,7 @@ curl -X 'PATCH' \
   -H 'accept: application/json'
 ```
 
-At this point, if you go back to Azure DevOps, you should see the **odm-demo-infrastructure** pipeline running.
+At this point, if you go back to your Azure DevOps, you should see the **odm-demo-infrastructure** pipeline running.
 
 * Once the pipeline is complete, view the details of the **Terraform Apply** step and copy the IP found at the bottom of the execution log: **vm-public-endpoint**.
 * Create a second SSH service connection as done [in this paragraph](####-ODM-Platform-deployment-instructions-####), specifying the following values:
@@ -284,7 +276,7 @@ At this point, if you go back to Azure DevOps, you should see the **odm-demo-inf
     * Check the option: Grant access permission to all pipelines.
 
 ## Start Application Deployment Activity
-Now let's move on to the second and last activity of our Data Product, **deployAppDev**:
+Now let's move on to the second and last activity of our Flight Frequency Data Product, **deployAppDev**:
 
 * Register the activity:
 
@@ -306,12 +298,12 @@ curl -X 'PATCH' \
 
 At this point, if you go back to Azure DevOps, you should see the **odm-demo-application** pipeline running.
 
-Once the pipeline is finished, you have completed the provisioning of the Airline Data Product, and you can start querying the exposed interfaces. 
+Once the pipeline is finished, you have completed the provisioning of the Flight Frequency Data Product, and you can start querying the exposed interfaces. 
 
-# Test Data Product Interfaces
-As described initially, the Data Product exposes two interfaces, a REST API, and a SQL one.
+# Test Flight Frequency Data Product Interfaces
+As described initially, the Flight Frequency Data Product exposes two interfaces, a REST API to get flight frequencies, and a SQL access to query data on database.
 
-* The first one exposes a REST API that returns, for a specific airline, the most frequent routes. Remember to replace the [IP] placeholder here with the value used in the previous step:
+* The REST API returns, for a specific airline code, the most frequent routes. You can execute this command to verify the interface (remember to replace the [IP] placeholder here with the value used in the previous step):
 
 ```
 curl -X 'GET' \
@@ -344,7 +336,7 @@ You should receive a response similar to this:
 ]
 ```
 
-The second one exposes an SQL interface (MySQLDB), which you can query using JDBC drivers. To connect, you can use, for instance, [DBeaver Community](https://dbeaver.io/) and the following information:
+The second one exposes a SQL interface (MySQLDB), which you can query using JDBC drivers. To connect, you can use, for instance, [DBeaver Community](https://dbeaver.io/) and the following information:
 
 * DB Type: MySQL 8
 * Hostname: Find the value within the **mysql-endpoint** parameter returned in the output by the **odm-demo-infrastructure** pipeline in the **Terraform Apply** step.
@@ -352,7 +344,7 @@ The second one exposes an SQL interface (MySQLDB), which you can query using JDB
 * Password: @1rl1n3D3m0!
 
 
-Congratulations! You have successfully deployed your first Data Product.
+Congratulations 🎉 You have successfully deployed and tested your first data product!
 
 # Cleanup
 To delete all the resources created in this guide, navigate to the **infrastructure** folder and execute the following commands, replacing the placeholders with the values from the configuration used in this demo.
