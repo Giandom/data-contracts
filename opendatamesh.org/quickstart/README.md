@@ -43,7 +43,7 @@ In the following snippet, the *flight_frequency_db* output port is represented, 
 
 ```
 {
-    "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:airlinedemo:1:outputports:flight_frequency_db",
+    "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:flightfrequency:1:outputports:flight_frequency_db",
     "entityType": "outputport",
     "name": "flight_frequency_db",
     "version": "1.0.0",
@@ -90,7 +90,7 @@ Below is the snippet representing the *flight_frequency_restapi* output port, wh
 
 ```
 {
-    "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:airlinedemo:1:outputports:flight_frequency_restapi",
+    "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:flightfrequency:1:outputports:flight_frequency_restapi",
     "entityType": "outputport",
     "name": "flight_frequency_restapi",
     "version": "1.0.0",
@@ -105,7 +105,7 @@ Below is the snippet representing the *flight_frequency_restapi* output port, wh
           "specification": "restapi",
           "specificationVersion": "1.0.0",
           "definition": {
-             "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:airlinedemo:1:outputports:flight_frequency_restapi:top3flights",
+             "fullyQualifiedName": "urn:org.opendatamesh:dataproducts:flightfrequency:1:outputports:flight_frequency_restapi:top3flights",
              "name": "top3flights",
              "displayName": "top3flights",
              "description": "This port exposes top 3 frequent flights",
