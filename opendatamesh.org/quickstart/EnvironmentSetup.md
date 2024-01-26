@@ -73,7 +73,7 @@ To deploy the ODM Platform, you'll need to set up specific Azure DevOps pipeline
 
 ## Register Service Connections
 1. Create an application in your Azure AD to manage the pipelines programmatically:
-    * Follow the instructions in [thos document](https://github.com/opendatamesh-initiative/odm-platform-up-services-executor-azuredevops), in the section: **Azure Environment**.
+    * Follow the instructions in [this document](https://github.com/opendatamesh-initiative/odm-platform-up-services-executor-azuredevops), in the section: **Azure Environment**.
 2. Return to Azure DevOps and create an Azure Resource Manager service connection.
     * Go to **Project Settings** (found at the bottom left of Azure DevOps).
     * In the left menu, click on **Service connections** under the Pipelines section.
